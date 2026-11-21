@@ -1,0 +1,26 @@
+name: macOS app and source smoke test
+on:
+  push:
+    branches: [codex/apple-source-fixes]
+    paths: [.github/workflows/macos-source-smoke.yml, .github/scripts/macos_source_smoke.py]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  smoke:
+    runs-on: macos-15
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+      - name: Download the macOS package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run_id=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow apple-source-check.yml --branch "$GITHUB_REF_NAME" --limit 1 --json databaseId --jq '.[0].databaseId')
+          gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name macos_build --dir "$RUNNER_TEMP/apple"
+          mkdir -p "$RUNNER_TEMP/mounted"
+          hdiutil verify "$RUNNER_TEMP"/apple/*.dmg
+          hdiutil attach "$RUNNER_TEMP"/apple/*.dmg -nobrowse -readonly -mountpoint "$RUNNER_TEMP/mounted"
+      - name: Start Venera Next and check the three adapters in QuickJS
+        run: python3 .github/scripts/macos_source_smoke.py "$RUNNER_TEMP/mounted/VeneraNext.app/Contents/MacOS/VeneraNext"
