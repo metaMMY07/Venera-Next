@@ -1,0 +1,18 @@
+name: Apple platform build verification
+on:
+  push:
+    branches: [codex/apple-source-fixes]
+    paths: [.github/workflows/apple-source-check.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  apple:
+    uses: ./.github/workflows/build.yml
+    with:
+      build_android: false
+      build_windows: false
+      build_macos: true
+      build_ios: true
+      build_linux_x64: false
+      build_linux_arm64: false
